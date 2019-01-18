@@ -58,23 +58,23 @@ function AcquireList {
 case $AuthorityChoice in
 
   1)
-  wget -O ARIN.orig ftp://ftp.arin.net/pub/stats/arin/delegated-arin-extended-latest
+  curl -o ARIN.orig ftp://ftp.arin.net/pub/stats/arin/delegated-arin-extended-latest
   ;;
 
   2)
-  wget -O LACNIC.orig ftp://ftp.lacnic.net/pub/stats/lacnic/delegated-lacnic-latest
+  curl -o LACNIC.orig ftp://ftp.lacnic.net/pub/stats/lacnic/delegated-lacnic-latest
   ;;
 
   3)
-  wget -O APNIC.orig ftp://ftp.apnic.net/pub/stats/apnic/delegated-apnic-latest
+  curl -o APNIC.orig ftp://ftp.apnic.net/pub/stats/apnic/delegated-apnic-latest
   ;;
 
   4)
-  wget -O AFRINIC.orig ftp://ftp.afrinic.net/pub/stats/afrinic/delegated-afrinic-latest
+  curl -o AFRINIC.orig ftp://ftp.afrinic.net/pub/stats/afrinic/delegated-afrinic-latest
   ;;
 
   5)
-  wget -O RIPE.orig ftp://ftp.ripe.net/ripe/stats/delegated-ripencc-latest
+  curl -o RIPE.orig ftp://ftp.ripe.net/ripe/stats/delegated-ripencc-latest
   ;;
 
 esac
@@ -157,7 +157,7 @@ function SpecifyCountry {
     SelectCountry
 
   else
-    exit
+    ConvertAuthorityListToCIDR
   fi
 
 }
@@ -170,12 +170,6 @@ if [[ "$SpecifyCountry" == "y" || "$SpecifyCountry" == "Y" ]]
 then
 
 sed '/ipv6/d' $Authority.orig \
-| sed '/asn/d' \
-| sed '/^2/d' \
-| sed '/\*/d' \
-| sed -e '/allocated/d' \
- -e '/available/d' \
-| sed '/reserved/d' \
 | sed -e "/$CountryShortName/!d" \
  -e 's/ripencc|..|ipv4|//g' \
  -e 's/ripencc||ipv4|//g' \
@@ -220,18 +214,17 @@ sed '/ipv6/d' $Authority.orig \
  -e 's/|1073741824|.*$/\/2/g' \
  -e 's/|2147483648|.*$/\/1/g' \
  -e '/^.*|.*$/d' \
->> $Authority.cidr
-
-else
-
-sed '/ipv6/d' $Authority.orig \
 | sed '/asn/d' \
 | sed '/^2/d' \
 | sed '/\*/d' \
 | sed -e '/allocated/d' \
  -e '/available/d' \
 | sed '/reserved/d' \
- -e 's/ripencc|..|ipv4|//g' \
+>> $Authority.cidr
+
+else
+sed '/ipv6/d' $Authority.orig \
+| sed -e 's/ripencc|..|ipv4|//g' \
  -e 's/ripencc||ipv4|//g' \
  -e 's/afrinic|..|ipv4|//g' \
  -e 's/afrinic||ipv4|//g' \
@@ -274,12 +267,17 @@ sed '/ipv6/d' $Authority.orig \
  -e 's/|1073741824|.*$/\/2/g' \
  -e 's/|2147483648|.*$/\/1/g' \
  -e '/^.*|.*$/d' \
+| sed '/asn/d' \
+| sed '/^2/d' \
+| sed '/\*/d' \
+| sed -e '/allocated/d' \
+ -e '/available/d' \
+| sed '/reserved/d' \
 >> $Authority.cidr
 
 fi
 
 echo "Creation of $Authority.cidr has finshed."
-
 }
 
 function ConvertCIDRtoConfig {
@@ -405,6 +403,6 @@ VerifyAuthorityChoice
 AcquireList
 SetAuthority
 SpecifyCountry
-# SelectCountry
+#SelectCountry
 ConvertAuthorityListToCIDR
 ConvertCIDRtoConfig
